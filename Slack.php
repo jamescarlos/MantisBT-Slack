@@ -40,6 +40,7 @@ class SlackPlugin extends MantisPlugin {
             'bot_icon' => '',
             'channels' => array(),
             'default_channel' => '#general',
+            'attachment_style' => '1'
         );
     }
 

@@ -67,6 +67,15 @@ print_manage_menu( );
 
     <tr <?php echo helper_alternate_class( )?>>
       <td class="category">
+        <?php echo plugin_lang_get( 'attachment_style' )?>
+      </td>
+      <td  colspan="2">
+        <input type="checkbox" name="attachment_style"<?php if ( plugin_config_get( 'attachment_style' )) echo ' checked="checked"' ?> />
+      </td>
+    </tr>
+
+    <tr <?php echo helper_alternate_class( )?>>
+      <td class="category">
         <?php echo plugin_lang_get( 'channels' )?>
       </td>
       <td  colspan="2">
