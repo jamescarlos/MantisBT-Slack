@@ -63,7 +63,31 @@ class SlackPlugin extends MantisPlugin {
                 );
                 break;
         }
-        $this->notify($msg, $this->get_channel($project));
+        $attachment = array();
+        if (plugin_config_get('attachment_style')) {
+            $fallback = 'Summary: ' . $summary . "\n" . 'Assigned To: ' . $handler . "\n" . 'Status: ' . $status;
+            $attachment = array(
+                'fallback' => $fallback,
+                'fields' => array(
+                    array(
+                        'title' => 'Summary',
+                        'value' => $summary,
+                        'short' => false
+                    ),
+                    array(
+                        'title' => 'Assigned To',
+                        'value' => $handler,
+                        'short' => true
+                    ),
+                    array(
+                        'title' => 'Status',
+                        'value' => $status,
+                        'short' => true
+                    )
+                )
+            );
+        }
+        $this->notify($msg, $this->get_channel($project), $attachment);
     }
 
     function new_update_bugnote($event, $bug_id, $bugnote_id) {
@@ -76,12 +100,25 @@ class SlackPlugin extends MantisPlugin {
         $note = bugnote_get_text($bugnote_id);
         switch ($event) {
             case 'EVENT_BUGNOTE_ADD':
-                $msg = sprintf("[%s] %s commented on <%s|%s> saying:\n%s",
-                    $project, $reporter, $url, $summary, $note
+                $msg = sprintf("[%s] A note has been added to <%s|%s>.",
+                    $project, $url, $summary
                 );
                 break;
         }
-        $this->notify($msg, $this->get_channel($project));
+        $attachment = array();
+        if (plugin_config_get('attachment_style')) {
+            $attachment = array(
+                'fallback' => $reporter . ': ' . $note,
+                'fields' => array(
+                    array(
+                        'title' => $reporter,
+                        'value' => $note,
+                        'short' => false
+                    )
+                )
+            );
+        }
+        $this->notify($msg, $this->get_channel($project), $attachment);
     }
 
     function get_channel($project) {
@@ -89,7 +126,7 @@ class SlackPlugin extends MantisPlugin {
         return isset($channels[$project]) ? $channels[$project] : plugin_config_get('default_channel');
     }
 
-    function notify($msg, $channel) {
+    function notify($msg, $channel, $attachment = array()) {
         $ch = curl_init();
         // @see https://my.slack.com/services/new/incoming-webhook
         $url = sprintf('https://%s.slack.com/services/hooks/incoming-webhook?token=%s', 
@@ -108,6 +145,9 @@ class SlackPlugin extends MantisPlugin {
             $payload['icon_emoji'] = $bot_icon;
         } elseif ($bot_icon) {
             $payload['icon_url'] = $bot_icon;
+        }
+        if ($attachment) {
+            $payload['attachments'] = array($attachment);
         }
         $data = 'payload=' . json_encode($payload);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
